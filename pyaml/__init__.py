@@ -5,6 +5,12 @@ import itertools as it, operator as op, functools as ft
 from collections import defaultdict, OrderedDict
 import os, sys, io, yaml
 
+if sys.version[0] < '3':
+    bytes_type = str
+    unicode_type = unicode
+else:
+    bytes_type = bytes
+    unicode_type = str
 
 class PrettyYAMLDumper(yaml.dumper.SafeDumper):
 
@@ -18,7 +24,7 @@ class PrettyYAMLDumper(yaml.dumper.SafeDumper):
 			'tag:yaml.org,2002:map', value, flow_style=None )
 		if dumper.alias_key is not None:
 			dumper.represented_objects[dumper.alias_key] = node
-		for item_key, item_value in data.viewitems():
+		for item_key, item_value in data.items():
 			node_key = dumper.represent_data(item_key)
 			node_value = dumper.represent_data(item_value)
 			value.append((node_key, node_value))
@@ -88,7 +94,7 @@ class UnsafePrettyYAMLDumper(PrettyYAMLDumper):
 		# Explicit crash on any bytes object might be more sane, but also annoying
 		# Use something like base64 to encode such buffer values instead
 		# Having such binary stuff pretty much everywhere on unix (e.g. paths) kinda sucks
-		data = unicode(data) # read the comment above
+		data = unicode_type(data) # read the comment above
 
 		# Try to use '|' style for multiline data,
 		#  quoting it with 'literal' if lines are too long anyway,
@@ -103,7 +109,7 @@ class UnsafePrettyYAMLDumper(PrettyYAMLDumper):
 
 		return yaml.representer.ScalarNode('tag:yaml.org,2002:str', data, style=style)
 
-for str_type in [bytes, unicode]:
+for str_type in [bytes_type, unicode_type]:
 	UnsafePrettyYAMLDumper.add_representer(
 		str_type, UnsafePrettyYAMLDumper.represent_stringish )
 
@@ -132,7 +138,7 @@ def dump_add_vspacing(buff, vspacing):
 	buff.write(''.join(result).encode('utf-8'))
 
 
-def dump(data, dst=unicode, safe=False, force_embed=False, vspacing=None):
+def dump(data, dst=unicode_type, safe=False, force_embed=False, vspacing=None):
 	buff = io.BytesIO()
 	Dumper = PrettyYAMLDumper if safe else UnsafePrettyYAMLDumper
 	Dumper = ft.partial(Dumper, force_embed=force_embed)
@@ -141,9 +147,11 @@ def dump(data, dst=unicode, safe=False, force_embed=False, vspacing=None):
 	if vspacing is not None:
 		dump_add_vspacing(buff, vspacing)
 
-	if dst is bytes:
+	if dst is bytes_type:
 		return buff.getvalue()
-	elif dst is unicode:
+	elif dst is unicode_type:
 		return buff.getvalue().decode('utf-8')
+	elif isinstance(dst, io.TextIOBase):
+		dst.write(buff.getvalue().decode('utf-8'))
 	else:
 		dst.write(buff.getvalue())

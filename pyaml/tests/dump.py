@@ -5,6 +5,12 @@ import itertools as it, operator as op, functools as ft
 from collections import Mapping, OrderedDict
 import os, sys, io, yaml, pyaml, unittest
 
+if sys.version[0] < '3':
+    bytes_type = str
+    unicode_type = unicode
+else:
+    bytes_type = bytes
+    unicode_type = str
 
 large_yaml = b'''
 ### Default (baseline) configuration parameters.
@@ -216,26 +222,26 @@ class DumpTests(unittest.TestCase):
 			for v in data:
 				dst.extend(self.flatten(v, path + (list,)))
 		elif isinstance(data, Mapping):
-			for k,v in data.viewitems():
+			for k,v in data.items():
 				dst.extend(self.flatten(v, path + (k,)))
-		else: dst.append((path, data))
+		else: dst.append((path, unicode_type(data)))
 		return tuple(sorted(dst))
 
 	def test_dst(self):
-		buff = io.BytesIO()
-		self.assertIs(pyaml.dump(data, buff), None)
-		self.assertIsInstance(pyaml.dump(data, str), str)
-		self.assertIsInstance(pyaml.dump(data, unicode), unicode)
+		self.assertIs(pyaml.dump(data, io.BytesIO()), None)
+		self.assertIs(pyaml.dump(data, io.StringIO()), None)
+		self.assertIsInstance(pyaml.dump(data, bytes_type), bytes_type)
+		self.assertIsInstance(pyaml.dump(data, unicode_type), unicode_type)
 
 	def test_simple(self):
 		a = self.flatten(data)
-		b = pyaml.dump(data, unicode)
+		b = pyaml.dump(data, unicode_type)
 		self.assertEquals(a, self.flatten(yaml.load(b)))
 
 	def test_vspacing(self):
 		data = yaml.load(large_yaml)
 		a = self.flatten(data)
-		b = pyaml.dump(data, unicode, vspacing=[2, 1])
+		b = pyaml.dump(data, unicode_type, vspacing=[2, 1])
 		self.assertEquals(a, self.flatten(yaml.load(b)))
 		pos, pos_list = 0, list()
 		while True:
@@ -250,36 +256,36 @@ class DumpTests(unittest.TestCase):
 				1374, 1375, 1383, 1397, 1413, 1431, 1432, 1453, 1454, 1467, 1468, 1485, 1486, 1487,
 				1498, 1499, 1530, 1531, 1551, 1552, 1566, 1577, 1590, 1591, 1612, 1613, 1614, 1622,
 				1623, 1638, 1648, 1649, 1657, 1658, 1688, 1689, 1698, 1720, 1730 ] )
-		b = pyaml.dump(data, unicode)
+		b = pyaml.dump(data, unicode_type)
 		self.assertNotIn('\n\n', b)
 
 	def test_ids(self):
-		b = pyaml.dump(data, unicode)
+		b = pyaml.dump(data, unicode_type)
 		self.assertNotIn('&id00', b)
 		self.assertIn('query_dump_clone: *query_dump_clone', b)
 		self.assertIn("'id в уникоде': &ids_-_id2_v_unikode", b) # kinda bug - should be just "id"
 
 	def test_force_embed(self):
-		b = pyaml.dump(data, unicode, force_embed=True)
-		c = pyaml.dump(data, unicode, safe=True, force_embed=True)
+		b = pyaml.dump(data, unicode_type, force_embed=True)
+		c = pyaml.dump(data, unicode_type, safe=True, force_embed=True)
 		for char, dump in it.product('*&', [b, c]):
 			self.assertNotIn(char, dump)
 
 	def test_encoding(self):
-		b = pyaml.dump(data, unicode, force_embed=True)
-		b_lines = map(unicode.strip, b.splitlines())
+		b = pyaml.dump(data, unicode_type, force_embed=True)
+		b_lines = list(map(unicode_type.strip, b.splitlines()))
 		chk = ['query_dump:', 'key1: тест1', 'key2: тест2', 'key3: тест3', 'последний:']
 		pos = b_lines.index('query_dump:')
 		self.assertEqual(b_lines[pos:pos + len(chk)], chk)
 
 	def test_str_long(self):
-		b = pyaml.dump(data_str_long, unicode)
+		b = pyaml.dump(data_str_long, unicode_type)
 		self.assertNotIn('"', b)
 		self.assertNotIn("'", b)
 		self.assertEqual(len(b.splitlines()), 1)
 
 	def test_str_multiline(self):
-		b = pyaml.dump(data_str_multiline, unicode)
+		b = pyaml.dump(data_str_multiline, unicode_type)
 		b_lines = b.splitlines()
 		self.assertGreater(len(b_lines), len(data_str_multiline['cert'].splitlines()))
 		for line in b_lines: self.assertLess(len(line), 100)

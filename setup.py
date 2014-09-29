@@ -29,7 +29,7 @@ setup(
 		'License :: OSI Approved',
 		'Programming Language :: Python',
 		'Programming Language :: Python :: 2.7',
-		'Programming Language :: Python :: 2 :: Only',
+		'Programming Language :: Python :: 3.4',
 		'Topic :: Software Development',
 		'Topic :: Software Development :: Libraries :: Python Modules' ],
 

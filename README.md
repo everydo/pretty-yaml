@@ -224,7 +224,7 @@ welcome!).
 Installation
 --------------------
 
-It's a regular package for Python 2.7 (not 3.X).
+It's a regular package for Python 2.7 or 3.4.
 
 Using [pip](http://pip-installer.org/) is the best way:
 
@@ -256,4 +256,4 @@ and should pull it in as a dependency.
 
 Dependency on [unidecode](http://pypi.python.org/pypi/Unidecode) module is
 optional and should only be necessary if same-id objects or recursion is used
-within serialized data.
+within serialized data or if you want to run test script.
