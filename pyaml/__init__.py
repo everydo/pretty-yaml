@@ -136,7 +136,7 @@ def dump(data, dst=unicode, safe=False, force_embed=False, vspacing=None):
 	buff = io.BytesIO()
 	Dumper = PrettyYAMLDumper if safe else UnsafePrettyYAMLDumper
 	Dumper = ft.partial(Dumper, force_embed=force_embed)
-	yaml.dump_all([data], buff, Dumper=Dumper, default_flow_style=False, encoding='utf-8')
+	yaml.dump_all([data], buff, Dumper=Dumper, default_flow_style=False, encoding='utf-8', allow_unicode=True)
 
 	if vspacing is not None:
 		dump_add_vspacing(buff, vspacing)
